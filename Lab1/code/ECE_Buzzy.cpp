@@ -68,10 +68,11 @@ void ECE_Buzzy::handleInput(std::list<ECE_LaserBlast>& laserBlasts)
         {
             // Create laser blast at player's current position
             float laserX = getPosition().x + getGlobalBounds().width / 2.0f; // Position blast horizontally centered
-            float laserY = getPosition().y; // Position blast below player
+            // Spawn laser at buzzy's bottom edge so it visually leaves the sprite
+            float laserY = getPosition().y + getGlobalBounds().height;
 
-                // Create player laser moving down (player at top shooting down): moveUp = false
-                laserBlasts.emplace_back("graphics/laser_blast.png", laserX, laserY, false, screenHeight);
+            // Create player laser moving down (player at top shooting down): moveUp = false
+            laserBlasts.emplace_back("graphics/laser_blast.png", laserX, laserY, false, screenHeight);
 
             fireClock.restart(); // Reset fire clock (rate limiter)
         }

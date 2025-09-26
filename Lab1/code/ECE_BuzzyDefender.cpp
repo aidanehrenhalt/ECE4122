@@ -32,7 +32,9 @@ const int ENEMY_COLS = 10; // Enemy Formation - Columns
 const float ENEMY_SPACING_X = 80.0f; // Horizontal Spacing - Enemies
 const float ENEMY_SPACING_Y = 70.0f; // Vertical Spacing - Enemies
 const float FORMATION_START_X = 400.0f; // Starting Position - X - Enemy Formation
-const float FORMATION_START_Y = 150.0f; // Starting Position - Y - Enemy Formation (near top)
+// Start the formation lower on the screen (place formation in the lower half, above the bottom edge)
+// Adjusted so enemies appear well below the player (player is at the top of the screen)
+const float FORMATION_START_Y = WINDOW_HEIGHT - 580.0f; // Starting Position - Y - Enemy Formation
 const float FORMATION_SPEED = 100.0f; // Movement Speed - Enemy Formation
 const float FORMATION_ADVANCE_STEP = 30.0f; // Shift - Enemy Formation
 
@@ -43,7 +45,8 @@ void resetGame(
     ECE_Buzzy& buzzy, 
     std::vector<ECE_Enemy>& enemies, 
     std::list<ECE_LaserBlast>& laserBlasts, 
-    std::list<ECE_LaserBlast>& enemyLasers
+    std::list<ECE_LaserBlast>& enemyLasers,
+    sf::Clock& enemyFireClock
 );
 
 /**
@@ -117,7 +120,7 @@ int main()
     ECE_Buzzy buzzy(
         "graphics/Buzzy_blue.png", 
         WINDOW_WIDTH / 2.0f - 50.0f, 
-        WINDOW_HEIGHT - 200.0f, 
+        100.0f, // Start Buzzy near the top of the screen
         static_cast<float>(WINDOW_WIDTH),
         static_cast<float>(WINDOW_HEIGHT)
     );
@@ -177,8 +180,8 @@ int main()
                 {
                     if (currentState == GameState::Start)
                     {
-                        currentState = GameState::Playing;
-                        resetGame(buzzy, enemies, playerLasers, enemyLasers);
+                                currentState = GameState::Playing;
+                                resetGame(buzzy, enemies, playerLasers, enemyLasers, enemyFireClock);
                     }
                     else if (currentState == GameState::GameOver)
                     {
@@ -262,7 +265,7 @@ int main()
                     ++enemyIt;
                 }
 
-                // Check Win / Loss Conditions
+                            // Check Win / Loss Conditions
                 if (checkWinCond(enemies))
                 {
                     currentState = GameState::GameOver;
@@ -322,10 +325,11 @@ int main()
     return 0;
 }
 
-void resetGame(ECE_Buzzy& buzzy, std::vector<ECE_Enemy>& enemies, std::list<ECE_LaserBlast>& playerLasers, std::list<ECE_LaserBlast>& enemyLasers)
+void resetGame(ECE_Buzzy& buzzy, std::vector<ECE_Enemy>& enemies, std::list<ECE_LaserBlast>& playerLasers, std::list<ECE_LaserBlast>& enemyLasers, sf::Clock& enemyFireClock)
 {
     // Reset Player Position (near bottom)
-    buzzy.reset(WINDOW_WIDTH / 2.0f - 25.0f, WINDOW_HEIGHT - 200.0f);
+    // Reset player to top region (so player starts at the top shooting downward)
+    buzzy.reset(WINDOW_WIDTH / 2.0f - 25.0f, 100.0f);
 
     // Reset Enemies
     int index = 0;
@@ -344,6 +348,9 @@ void resetGame(ECE_Buzzy& buzzy, std::vector<ECE_Enemy>& enemies, std::list<ECE_
     // Clear Player / Enemy Lasers
     playerLasers.clear();
     enemyLasers.clear();
+
+    // Restart enemy fire clock so enemies don't shoot immediately after a reset
+    enemyFireClock.restart();
 }
 
 void updateEnemyFormation(std::vector<ECE_Enemy>& enemies, float deltaTime, bool& movingRight, float& formationY)
@@ -379,7 +386,8 @@ void updateEnemyFormation(std::vector<ECE_Enemy>& enemies, float deltaTime, bool
 
             if (contAdvance)
             {
-                // Advance formation upward (decrease y) rather than downward
+                // Advance formation toward the player. Player (Buzzy) sits near the top of the screen,
+                // so advance upward (decrease y) instead of downward.
                 enemy.setPosition(enemy.getPosition().x, pos.y - FORMATION_ADVANCE_STEP);
             }
         }
@@ -436,7 +444,7 @@ void handleEnemyShooting(const std::vector<ECE_Enemy>& enemies, std::list<ECE_La
             float laserX = shooter.getPosition().x + shooter.getGlobalBounds().width / 2.0f;
             float laserY = shooter.getPosition().y + shooter.getGlobalBounds().height;
 
-            // Enemy lasers move downwards toward the player (moveUp = false)
+            // Enemy lasers move upwards toward the player (moveUp = true)
             enemyLasers.emplace_back("graphics/laser_blast.png", laserX, laserY, true, WINDOW_HEIGHT);
         }
 
@@ -459,28 +467,16 @@ bool checkWinCond(const std::vector<ECE_Enemy>& enemies)
 
 bool checkLossCond(const ECE_Buzzy& buzzy, const std::vector<ECE_Enemy>& enemies)
 {
-    // Check loss: if any alive enemy collides with the player OR has moved up to the player's level.
-    // Use intersection of global bounds to detect direct collision, and a conservative
-    // Y-position check (enemy top <= buzzy bottom + threshold) for near-misses.
-    const float threshold = 10.0f;
+    // Check loss: only lose if an alive enemy directly collides with the player.
+    // Remove the conservative proximity check so the game doesn't immediately end
+    // when the formation is simply near the player.
     sf::FloatRect buzzyBounds = buzzy.getGlobalBounds();
-    float buzzyTop = buzzyBounds.top;
-
     for (const auto& enemy : enemies)
     {
         if (!enemy.isAlive()) continue;
 
         sf::FloatRect enemyBounds = enemy.getGlobalBounds();
-
-        // Direct collision
         if (enemyBounds.intersects(buzzyBounds))
-        {
-            return true;
-        }
-
-        // If enemy has moved down to the player's level (enemy bottom >= buzzy top - threshold)
-        float enemyBottom = enemyBounds.top + enemyBounds.height;
-        if (enemyBottom >= buzzyTop - threshold)
         {
             return true;
         }

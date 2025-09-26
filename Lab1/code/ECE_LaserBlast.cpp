@@ -20,6 +20,12 @@ ECE_LaserBlast::ECE_LaserBlast(const std::string& textureFile, float startX, flo
 
     // Set Laser Texture / Position
     setTexture(laserTexture);
+    // Center laser origin so bounding box aligns with visual sprite
+    sf::Vector2u texSize = laserTexture.getSize();
+    if (texSize.x > 0 && texSize.y > 0)
+    {
+        setOrigin(static_cast<float>(texSize.x) / 2.0f, static_cast<float>(texSize.y) / 2.0f);
+    }
     setPosition(startX, startY);
 }
 
