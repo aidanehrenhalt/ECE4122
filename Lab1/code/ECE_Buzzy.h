@@ -4,6 +4,9 @@ Class: ECE 4122-A
 Last Date Modified: 09/26/2025
 
 Description: Header file for ECE_Buzzy class
+- Player controlled entity / sprite
+- Player can move left and right within screen bounds
+- Player can shoot laser blasts downward towards enemies
 
 */
 
@@ -23,7 +26,7 @@ class ECE_LaserBlast;
 class ECE_Buzzy : public sf::Sprite
 {
     private:
-        sf::Texture textureBuzzy; // Texture - Buzzy Sprite
+        sf::Texture buzzyTexture; // Texture - Buzzy Sprite
         float movementSpeed;
         float fireRate;
         sf::Clock fireClock;
