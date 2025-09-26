@@ -23,6 +23,16 @@ ECE_Buzzy::ECE_Buzzy(const std::string& textureFile, float startX, float startY,
     // Set Buzzy Texture / Position
     setTexture(buzzyTexture);
     setPosition(startX, startY);
+
+    // Scale the player sprite to a reasonable on-screen size
+    // Desired visual width in pixels (adjustable)
+    const float desiredWidth = 100.0f;
+    sf::Vector2u texSize = buzzyTexture.getSize();
+    if (texSize.x > 0 && texSize.y > 0)
+    {
+        float scale = desiredWidth / static_cast<float>(texSize.x);
+        setScale(scale, scale);
+    }
 }
 
 void ECE_Buzzy::update(float deltaTime)

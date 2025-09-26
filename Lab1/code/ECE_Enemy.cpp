@@ -22,6 +22,15 @@ ECE_Enemy::ECE_Enemy(const std::string& textureFile, float startX, float startY)
     // Set Enemy Texture / Position
     setTexture(enemyTexture);
     setPosition(startX, startY);
+
+    // Scale enemy sprite to reasonable size to avoid overlap on high-res displays
+    const float desiredEnemyWidth = 64.0f; // pixels
+    sf::Vector2u texSize = enemyTexture.getSize();
+    if (texSize.x > 0 && texSize.y > 0)
+    {
+        float scale = desiredEnemyWidth / static_cast<float>(texSize.x);
+        setScale(scale, scale);
+    }
 }
 
 // Check enemy collision with other sprite(s)
