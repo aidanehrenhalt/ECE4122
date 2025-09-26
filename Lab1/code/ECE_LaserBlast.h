@@ -39,6 +39,12 @@ class ECE_LaserBlast : public sf::Sprite
          * Update laser position
          * @return true if off screen, otherwise false
          */
+        void update(float deltaTime);
+
+        /**
+         * Check laser position relative to screen bounds
+         * @return true if off screen, otherwise false
+         */
         bool isOffScreen() const;
 
         /**
