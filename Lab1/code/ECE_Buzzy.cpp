@@ -12,7 +12,7 @@ Description: ECE_Buzzy class implementation
 #include <iostream>
 
 // <Class::Constructor()> : <Initializer List>
-ECE_Buzzy::ECE_Buzzy(const std::string& textureFile, float startX, float startY, float screenW) : movementSpeed(400.0f), fireRate(0.2f), screenWidth(screenW)
+ECE_Buzzy::ECE_Buzzy(const std::string& textureFile, float startX, float startY, float screenW, float screenH) : movementSpeed(400.0f), fireRate(0.2f), screenWidth(screenW), screenHeight(screenH)
 {
     // Load Buzzy Texture
     if (!buzzyTexture.loadFromFile(textureFile))
@@ -60,7 +60,8 @@ void ECE_Buzzy::handleInput(std::list<ECE_LaserBlast>& laserBlasts)
             float laserX = getPosition().x + getGlobalBounds().width / 2.0f; // Position blast horizontally centered
             float laserY = getPosition().y; // Position blast below player
 
-            laserBlasts.emplace_back("graphics/laserBlast.png", laserX, laserY);
+                // Create player laser moving down (player at top shooting down): moveUp = false
+                laserBlasts.emplace_back("graphics/laser_blast.png", laserX, laserY, false, screenHeight);
 
             fireClock.restart(); // Reset fire clock (rate limiter)
         }

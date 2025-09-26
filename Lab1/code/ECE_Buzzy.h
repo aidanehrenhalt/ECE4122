@@ -31,6 +31,7 @@ class ECE_Buzzy : public sf::Sprite
         float fireRate;
         sf::Clock fireClock;
         float screenWidth;
+        float screenHeight;
 
     public:
         /**
@@ -40,7 +41,7 @@ class ECE_Buzzy : public sf::Sprite
          * @param startY - starting Y position
          * @param screenW - screen width for maintaining boundaries
          */
-        ECE_Buzzy(const std::string& textureFile, float startX, float startY, float screenW);
+    ECE_Buzzy(const std::string& textureFile, float startX, float startY, float screenW, float screenH);
 
         /**
          * Update Buzzy position based on player input
