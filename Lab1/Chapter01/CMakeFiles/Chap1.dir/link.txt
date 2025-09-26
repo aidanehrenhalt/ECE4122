@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/Chap1.dir/code/Timber.cpp.o -o ../output/bin/Chap1  -Wl,-rpath,/home/aceaid/ECE4122/Lab1/output/lib ../output/lib/libsfml-graphics.so.2.6.2 ../output/lib/libsfml-window.so.2.6.2 ../output/lib/libsfml-system.so.2.6.2 

@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/aceaid/ECE4122/Lab1/code
+CXX_INCLUDES = -I/home/aceaid/ECE4122/Lab1/Lab1 -I/home/aceaid/ECE4122/Lab1/PRIVATE -I/home/aceaid/ECE4122/Lab1/../SFML/include
 
-CXX_FLAGS = -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -Wpedantic
+CXX_FLAGS = -O3 -DNDEBUG -std=gnu++17
 

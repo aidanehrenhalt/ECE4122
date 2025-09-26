@@ -103,7 +103,7 @@ int main()
 
     // Load Start Screen Texture
     sf::Texture startScreenTexture;
-    if(!startScreenTexture.loadFromFile("graphics/start_screen.png"))
+    if(!startScreenTexture.loadFromFile("graphics/Start_Screen.png"))
     {
         std::cerr << "Error loading start screen texture" << std::endl;
         return -1;
@@ -447,21 +447,31 @@ bool checkWinCond(const std::vector<ECE_Enemy>& enemies)
 
 bool checkLossCond(const ECE_Buzzy& buzzy, const std::vector<ECE_Enemy>& enemies)
 {
-    // Check if Any Enemy Nears Player Level / Enemy Collision with Player
-    float buzzyY = buzzy.getPosition().y;
+    // Check loss: if any alive enemy collides with the player OR has moved up to the player's level.
+    // Use intersection of global bounds to detect direct collision, and a conservative
+    // Y-position check (enemy top <= buzzy bottom + threshold) for near-misses.
+    const float threshold = 10.0f;
+    sf::FloatRect buzzyBounds = buzzy.getGlobalBounds();
+    float buzzyBottom = buzzyBounds.top + buzzyBounds.height;
 
     for (const auto& enemy : enemies)
     {
-        if (enemy.isAlive())
-        {
-            float enemyY = enemy.getPosition().y + enemy.getGlobalBounds().height;
+        if (!enemy.isAlive()) continue;
 
-            if (enemyY >= buzzyY - 50.0f) // If Enemies Near Player Level
-            {
-                return true; // Player Loses - Enemies Reach Buzzy
-            }
+        sf::FloatRect enemyBounds = enemy.getGlobalBounds();
+
+        // Direct collision
+        if (enemyBounds.intersects(buzzyBounds))
+        {
+            return true;
+        }
+
+        // If enemy has moved up to the player's level (enemy top <= buzzy bottom + threshold)
+        if (enemyBounds.top <= buzzyBottom + threshold)
+        {
+            return true;
         }
     }
 
-    return false; // Buzzy Still Safe
+    return false;
 }

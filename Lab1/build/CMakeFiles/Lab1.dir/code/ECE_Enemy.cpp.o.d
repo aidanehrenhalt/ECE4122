@@ -1,10 +1,14 @@
 CMakeFiles/Lab1.dir/code/ECE_Enemy.cpp.o: \
  /home/aceaid/ECE4122/Lab1/code/ECE_Enemy.cpp /usr/include/stdc-predef.h \
  /home/aceaid/ECE4122/Lab1/code/ECE_Enemy.h \
- /usr/include/SFML/Graphics.hpp /usr/include/SFML/Window.hpp \
- /usr/include/SFML/System.hpp /usr/include/SFML/Config.hpp \
- /usr/include/SFML/System/Clock.hpp /usr/include/SFML/System/Export.hpp \
- /usr/include/SFML/System/Time.hpp /usr/include/SFML/System/Err.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Config.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Clock.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Export.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Time.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Err.hpp \
  /usr/include/c++/13/ostream /usr/include/c++/13/bits/requires_hosted.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
@@ -160,13 +164,15 @@ CMakeFiles/Lab1.dir/code/ECE_Enemy.cpp.o: \
  /usr/include/c++/13/bits/locale_facets.tcc \
  /usr/include/c++/13/bits/basic_ios.tcc \
  /usr/include/c++/13/bits/ostream.tcc \
- /usr/include/SFML/System/FileInputStream.hpp \
- /usr/include/SFML/System/InputStream.hpp \
- /usr/include/SFML/System/NonCopyable.hpp \
- /usr/include/SFML/System/Lock.hpp \
- /usr/include/SFML/System/MemoryInputStream.hpp \
- /usr/include/SFML/System/Mutex.hpp /usr/include/SFML/System/Sleep.hpp \
- /usr/include/SFML/System/String.hpp /usr/include/SFML/System/Utf.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/FileInputStream.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/InputStream.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/NonCopyable.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Lock.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/MemoryInputStream.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Mutex.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Sleep.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/String.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Utf.hpp \
  /usr/include/c++/13/algorithm /usr/include/c++/13/bits/stl_algo.h \
  /usr/include/c++/13/bits/algorithmfwd.h \
  /usr/include/c++/13/bits/stl_heap.h \
@@ -179,68 +185,79 @@ CMakeFiles/Lab1.dir/code/ECE_Enemy.cpp.o: \
  /usr/include/x86_64-linux-gnu/c++/13/bits/messages_members.h \
  /usr/include/libintl.h /usr/include/c++/13/bits/codecvt.h \
  /usr/include/c++/13/bits/locale_facets_nonio.tcc \
- /usr/include/c++/13/bits/locale_conv.h /usr/include/SFML/System/Utf.inl \
+ /usr/include/c++/13/bits/locale_conv.h \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Utf.inl \
  /usr/include/c++/13/iterator /usr/include/c++/13/bits/stream_iterator.h \
- /usr/include/SFML/System/String.inl /usr/include/SFML/System/Thread.hpp \
- /usr/include/SFML/System/Thread.inl \
- /usr/include/SFML/System/ThreadLocal.hpp \
- /usr/include/SFML/System/ThreadLocalPtr.hpp \
- /usr/include/SFML/System/ThreadLocalPtr.inl \
- /usr/include/SFML/System/Vector2.hpp \
- /usr/include/SFML/System/Vector2.inl \
- /usr/include/SFML/System/Vector3.hpp \
- /usr/include/SFML/System/Vector3.inl \
- /usr/include/SFML/Window/Clipboard.hpp \
- /usr/include/SFML/Window/Export.hpp /usr/include/SFML/Window/Context.hpp \
- /usr/include/SFML/Window/GlResource.hpp \
- /usr/include/SFML/Window/ContextSettings.hpp \
- /usr/include/SFML/Window/Cursor.hpp /usr/include/SFML/Window/Event.hpp \
- /usr/include/SFML/Window/Joystick.hpp \
- /usr/include/SFML/Window/Keyboard.hpp /usr/include/SFML/Window/Mouse.hpp \
- /usr/include/SFML/Window/Sensor.hpp /usr/include/SFML/Window/Touch.hpp \
- /usr/include/SFML/Window/VideoMode.hpp /usr/include/c++/13/vector \
- /usr/include/c++/13/bits/stl_uninitialized.h \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/String.inl \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Thread.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Thread.inl \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/ThreadLocal.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/ThreadLocalPtr.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/ThreadLocalPtr.inl \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Vector2.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Vector2.inl \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Vector3.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/System/Vector3.inl \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/Clipboard.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/Export.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/Context.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/GlResource.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/ContextSettings.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/Cursor.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/Event.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/Joystick.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/Keyboard.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/Mouse.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/Sensor.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/Touch.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/VideoMode.hpp \
+ /usr/include/c++/13/vector /usr/include/c++/13/bits/stl_uninitialized.h \
  /usr/include/c++/13/bits/stl_vector.h \
  /usr/include/c++/13/bits/stl_bvector.h \
- /usr/include/c++/13/bits/vector.tcc /usr/include/SFML/Window/Window.hpp \
- /usr/include/SFML/Window/WindowBase.hpp \
- /usr/include/SFML/Window/Vulkan.hpp \
- /usr/include/SFML/Window/WindowHandle.hpp \
+ /usr/include/c++/13/bits/vector.tcc \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/Window.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/WindowBase.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/Vulkan.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/WindowHandle.hpp \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-least.h \
- /usr/include/SFML/Window/WindowStyle.hpp \
- /usr/include/SFML/Graphics/BlendMode.hpp \
- /usr/include/SFML/Graphics/Export.hpp \
- /usr/include/SFML/Graphics/CircleShape.hpp \
- /usr/include/SFML/Graphics/Shape.hpp \
- /usr/include/SFML/Graphics/Drawable.hpp \
- /usr/include/SFML/Graphics/RenderStates.hpp \
- /usr/include/SFML/Graphics/Transform.hpp \
- /usr/include/SFML/Graphics/Rect.hpp /usr/include/SFML/Graphics/Rect.inl \
- /usr/include/SFML/Graphics/Transformable.hpp \
- /usr/include/SFML/Graphics/VertexArray.hpp \
- /usr/include/SFML/Graphics/Vertex.hpp \
- /usr/include/SFML/Graphics/Color.hpp \
- /usr/include/SFML/Graphics/PrimitiveType.hpp \
- /usr/include/SFML/Graphics/ConvexShape.hpp \
- /usr/include/SFML/Graphics/Font.hpp /usr/include/SFML/Graphics/Glyph.hpp \
- /usr/include/SFML/Graphics/Texture.hpp \
- /usr/include/SFML/Graphics/Image.hpp /usr/include/c++/13/map \
- /usr/include/c++/13/bits/stl_tree.h \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Window/WindowStyle.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/BlendMode.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Export.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/CircleShape.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Shape.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Drawable.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/RenderStates.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Transform.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Rect.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Rect.inl \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Transformable.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/VertexArray.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Vertex.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Color.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/PrimitiveType.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/ConvexShape.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Font.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Glyph.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Texture.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Image.hpp \
+ /usr/include/c++/13/map /usr/include/c++/13/bits/stl_tree.h \
  /usr/include/c++/13/ext/aligned_buffer.h \
  /usr/include/c++/13/bits/node_handle.h \
  /usr/include/c++/13/bits/stl_map.h \
  /usr/include/c++/13/bits/stl_multimap.h \
  /usr/include/c++/13/bits/erase_if.h \
- /usr/include/SFML/Graphics/RectangleShape.hpp \
- /usr/include/SFML/Graphics/RenderTarget.hpp \
- /usr/include/SFML/Graphics/View.hpp \
- /usr/include/SFML/Graphics/RenderTexture.hpp \
- /usr/include/SFML/Graphics/RenderWindow.hpp \
- /usr/include/SFML/Graphics/Shader.hpp \
- /usr/include/SFML/Graphics/Glsl.hpp /usr/include/SFML/Graphics/Glsl.inl \
- /usr/include/SFML/Graphics/Sprite.hpp \
- /usr/include/SFML/Graphics/Text.hpp \
- /usr/include/SFML/Graphics/VertexBuffer.hpp /usr/include/c++/13/iostream \
- /usr/include/c++/13/istream /usr/include/c++/13/bits/istream.tcc
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/RectangleShape.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/RenderTarget.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/View.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/RenderTexture.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/RenderWindow.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Shader.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Glsl.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Glsl.inl \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Sprite.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/Text.hpp \
+ /home/aceaid/ECE4122/Lab1/../SFML/include/SFML/Graphics/VertexBuffer.hpp \
+ /usr/include/c++/13/iostream /usr/include/c++/13/istream \
+ /usr/include/c++/13/bits/istream.tcc
