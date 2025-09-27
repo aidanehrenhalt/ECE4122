@@ -25,8 +25,8 @@ enum class GameState
 };
 
 // Game Constants
-const int WINDOW_WIDTH = 1920; // 1080p Resolution - Width
-const int WINDOW_HEIGHT = 1080; // 1080p Resolution - Height
+const int WINDOW_WIDTH = 1900; // 1080p Resolution - Width
+const int WINDOW_HEIGHT = 1000; // 1080p Resolution - Height
 const int ENEMY_ROWS = 6; // Enemy Formation - Rows
 const int ENEMY_COLS = 10; // Enemy Formation - Columns
 const float ENEMY_SPACING_X = 80.0f; // Horizontal Spacing - Enemies
@@ -91,7 +91,7 @@ int main()
 {
     // Create Window
     // Use windowed mode by default for easier testing; switch to Fullscreen when ready
-    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "ECE Buzzy Defender", sf::Style::Fullscreen);
+    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "ECE Buzzy Defender");
 
     // Game State
     GameState currentState = GameState::Start;
