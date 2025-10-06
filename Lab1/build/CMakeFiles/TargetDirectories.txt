@@ -1,3 +1,0 @@
-/home/aceaid/ECE4122/Lab1/build/CMakeFiles/Lab1.dir
-/home/aceaid/ECE4122/Lab1/build/CMakeFiles/edit_cache.dir
-/home/aceaid/ECE4122/Lab1/build/CMakeFiles/rebuild_cache.dir

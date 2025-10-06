@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/Lab1.dir/code/ECE_Buzzy.cpp.o CMakeFiles/Lab1.dir/code/ECE_BuzzyDefender.cpp.o CMakeFiles/Lab1.dir/code/ECE_Enemy.cpp.o CMakeFiles/Lab1.dir/code/ECE_LaserBlast.cpp.o -o Lab1  /usr/lib/x86_64-linux-gnu/libsfml-graphics.so.2.6.1 /usr/lib/x86_64-linux-gnu/libsfml-window.so.2.6.1 /usr/lib/x86_64-linux-gnu/libsfml-system.so.2.6.1 

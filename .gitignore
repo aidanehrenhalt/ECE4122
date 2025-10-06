@@ -1,1 +1,32 @@
+# --- Build Directories ---
 build/*
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+*.cmake
+*.cbp
+*.a
+*.so
+*.dll
+*.dylib
+*.exe
+
+# --- IDE Meta Data ---
+# JetBrains IDEs
+.idea/
+
+# VS Code
+.vscode/
+
+# --- OS Generated Files ---
+.DS_Store # macOS
+Thumbs.db # Windows
+
+# --- Temp or Generated Files ---
+*.log
+*.tmp
+*.out
+*.obj
+*.o
+*.class
