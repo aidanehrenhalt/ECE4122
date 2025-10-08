@@ -11,3 +11,9 @@ set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../SFML/install" ${CMAKE_PREF
 
 # Find SFML
 find_package(SFML 2.6 COMPONENTS graphics window system REQUIRED)
+
+# Create executable
+add_executable(Lab2 ${SOURCES})
+
+# Link libraries
+target_link_libraries(Lab2 PRIVATE sfml-graphics sfml-window sfml-system)
