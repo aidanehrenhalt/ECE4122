@@ -13,6 +13,7 @@ Definitions for game grid, cell states, and rendering.
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <string>
+#include <chrono>
 
 /*
 Class Name: GameOfLife
@@ -32,6 +33,10 @@ class GameOfLife
         std::vector<std::vector<bool>> nextGrid;    // Next state of the grid
 
         sf::RectangleShape cellShape; // Shape for rendering cells
+
+        // Variables for measuring performance
+        int generationCount;                        // Track generations
+        std::chrono::microseconds totalUpdateTime;  // Total time for 100 generations
 
         void updateSequential();      // Update grid using Sequential
         void updateMultithreaded();   // Update grid using Multithreading
