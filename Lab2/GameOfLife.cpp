@@ -10,9 +10,11 @@ Contains logic for grid management, rules for Conway's Game of Life, and handlin
 #include "GameOfLife.h"
 #include <random>
 #include <iostream>
+#include <chrono>
 
 GameOfLife::GameOfLife(int windowWidth, int windowHeight, int cellSize, int numThreads, const std::string &procType) 
-    : windowWidth(windowWidth), windowHeight(windowHeight), cellSize(cellSize), numThreads(numThreads), procType(procType)
+    : windowWidth(windowWidth), windowHeight(windowHeight), cellSize(cellSize), numThreads(numThreads), procType(procType),
+    totalTime(0), generationCount(0)
 {
     // Grid Dimensions
     int gridWidth = windowWidth / cellSize;
@@ -22,7 +24,7 @@ GameOfLife::GameOfLife(int windowWidth, int windowHeight, int cellSize, int numT
     currentGrid.resize(gridHeight, std::vector<bool>(gridWidth, false));
     nextGrid.resize(gridHeight, std::vector<bool>(gridWidth, false));
 
-    // Setup cell shape for rendering
+    // Setup cell shape for rendering -- Note: Does it have to be White?
     cellShape.setSize(sf::Vector2f(cellSize, cellSize));
     cellShape.setFillColor(sf::Color::Green);
 
@@ -78,7 +80,7 @@ int GameOfLife::countNeighbors(int x, int y) const
     return numNeighbors;
 } // End countNeighbors()
 
-void GameOfLife::update()
+void GameOfLife::updateSequential()
 {
     // Sequential Implementation for now
     // Will add Multithreading and OpenMP later
@@ -108,6 +110,39 @@ void GameOfLife::update()
     
     // Proceed to next generation (nextGrid becomes currentGrid)
     currentGrid.swap(nextGrid);
+} // End updateSequential()
+
+void GameOfLife::update()
+{
+    // Start time for generation
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    // Call appropriate update function based on procType (Only 'SEQ' for now)
+    if (procType == "SEQ")
+    {
+        updateSequential();
+    } // Add Else If for "THRD" and "OMP" later
+
+    // End time for generation
+    auto endTime = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
+
+    // Time tracking / Generation counter
+    totalTime += duration;
+    generationCount++;
+
+    // Print average time every 100 generations
+    if (generationCount % 100 == 0)
+    {
+        if (procType == "SEQ")
+        {
+            std::cout << "Last 100 generations took " << totalTime.count() << " microseconds with a single thread." << std::endl;
+        } // Add Else If for "THRD" and "OMP" later
+
+        // Reset Time tracking / Generation counter
+        generationCount = 0;
+        totalTime = std::chrono::microseconds(0);
+    } // End generationCount if
 } // End update()
 
 void GameOfLife::render(sf::RenderWindow &window)

@@ -36,7 +36,7 @@ class GameOfLife
 
         // Variables for measuring performance
         int generationCount;                        // Track generations
-        std::chrono::microseconds totalUpdateTime;  // Total time for 100 generations
+        std::chrono::microseconds totalTime;  // Total time for 100 generations
 
         void updateSequential();      // Update grid using Sequential
         void updateMultithreaded();   // Update grid using Multithreading
