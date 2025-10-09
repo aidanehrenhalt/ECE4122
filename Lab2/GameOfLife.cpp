@@ -11,6 +11,8 @@ Contains logic for grid management, rules for Conway's Game of Life, and handlin
 #include <random>
 #include <iostream>
 #include <chrono>
+#include <thread>
+#include <omp.h>
 
 GameOfLife::GameOfLife(int windowWidth, int windowHeight, int cellSize, int numThreads, const std::string &procType) 
     : windowWidth(windowWidth), windowHeight(windowHeight), cellSize(cellSize), numThreads(numThreads), procType(procType),
@@ -24,9 +26,9 @@ GameOfLife::GameOfLife(int windowWidth, int windowHeight, int cellSize, int numT
     currentGrid.resize(gridHeight, std::vector<bool>(gridWidth, false));
     nextGrid.resize(gridHeight, std::vector<bool>(gridWidth, false));
 
-    // Setup cell shape for rendering -- Note: Does it have to be White?
+    // Setup cell shape for rendering
     cellShape.setSize(sf::Vector2f(cellSize, cellSize));
-    cellShape.setFillColor(sf::Color::Green);
+    cellShape.setFillColor(sf::Color::White);
 
     // Init grid with cells randomly set as alive or dead
     initGrid();
@@ -112,16 +114,122 @@ void GameOfLife::updateSequential()
     currentGrid.swap(nextGrid);
 } // End updateSequential()
 
+void GameOfLife::updateMultithreaded()
+{
+    int gridWidth = windowWidth / cellSize;
+    int gridHeight = windowHeight / cellSize;
+
+    // Vector for Multithreading
+    std::vector<std::thread> threads;
+
+    // Rows per thread
+    int rowsPerThread = gridHeight / numThreads;
+    int remainingRows = gridHeight % numThreads;
+
+    // Lambda function for multithreading
+    auto threadWork = [this, gridWidth](int startRow, int endRow)
+    {
+        for (int y = startRow; y < endRow; ++y)
+        {
+            for (int x = 0; x < gridWidth; ++x)
+            {
+                int numNeighbors = countNeighbors(x, y);
+                bool currentState = currentGrid[y][x];
+
+                if (currentState)
+                {
+                    // Cell is alive - Apply rule: Stay alive if 2 or 3 neighbors
+                    nextGrid[y][x] = (numNeighbors == 2 || numNeighbors == 3);
+                }
+                else
+                {
+                    // Cell is dead - Apply rule: Become alive if exactly 3 neighbors
+                    nextGrid[y][x] = (numNeighbors == 3);
+                }
+            }
+        }
+    };
+
+    // Start threads
+    int startRow = 0;
+
+    for (int i = 0; i < numThreads; ++i)
+    {
+        // Distribute rows to threads
+        int rows = rowsPerThread + (i < remainingRows ? 1 : 0);
+        int endRow = startRow + rows;
+
+        threads.emplace_back(threadWork, startRow, endRow);
+        startRow = endRow;
+    }
+
+    // Join threads
+    for (auto &thread : threads)
+    {
+        thread.join();
+    }
+
+    // Contine to next generation
+    currentGrid.swap(nextGrid);
+} // End updateMultithreaded()
+
+void GameOfLife::updateOpenMP()
+{
+    int gridWidth = windowWidth / cellSize;
+    int gridHeight = windowHeight / cellSize;
+
+    // Set number of threads for OpenMP
+    omp_set_num_threads(numThreads);
+
+    // Parallelization with OpenMP
+    #pragma omp parallel for schedule(static)
+    for (int y = 0; y < gridHeight; ++y)
+    {
+        for (int x = 0; x < gridWidth; ++x)
+        {
+            int numNeighbors = countNeighbors(x, y);
+            bool currentState = currentGrid[y][x];
+
+            if (currentState)
+            {
+                // Cell is alive - Apply rule: Stay alive if 2 or 3 neighbors
+                nextGrid[y][x] = (numNeighbors == 2 || numNeighbors == 3);
+            }
+            else
+            {
+                // Cell is dead - Apply rule: Become alive if exactly 3 neighbors
+                nextGrid[y][x] = (numNeighbors == 3);
+            }
+        } // End Grid Width Loop    
+    } // End Grid Height Loop
+
+    // Continue to next generation
+    currentGrid.swap(nextGrid);
+} // End updateOpenMP()
+
 void GameOfLife::update()
 {
     // Start time for generation
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    // Call appropriate update function based on procType (Only 'SEQ' for now)
+    // Call appropriate update function based on procType
     if (procType == "SEQ")
     {
         updateSequential();
-    } // Add Else If for "THRD" and "OMP" later
+    }
+    else if (procType == "THRD")
+    {
+        updateMultithreaded();
+    }
+    else if (procType == "OMP")
+    {
+        updateOpenMP();
+    }
+    else
+    {
+        std::cerr << "Error: Unknown processing type '" << procType << "'. Defaulting to Sequential." << std::endl;
+        updateSequential();
+    }
 
     // End time for generation
     auto endTime = std::chrono::high_resolution_clock::now();
@@ -137,7 +245,11 @@ void GameOfLife::update()
         if (procType == "SEQ")
         {
             std::cout << "Last 100 generations took " << totalTime.count() << " microseconds with a single thread." << std::endl;
-        } // Add Else If for "THRD" and "OMP" later
+        }
+        else if (procType == "THRD" || procType == "OMP")
+        {
+            std::cout << "Last 100 generations took " << totalTime.count() << " microseconds with " << numThreads << " threads." << std::endl;
+        }
 
         // Reset Time tracking / Generation counter
         generationCount = 0;
@@ -150,7 +262,7 @@ void GameOfLife::render(sf::RenderWindow &window)
     int gridWidth = windowWidth / cellSize;
     int gridHeight = windowHeight / cellSize;
 
-    // Draw alive cells (green) on black grid
+    // Draw alive cells (white) on black grid
     for (int y = 0; y < gridHeight; ++y)
     {
         for (int x = 0; x < gridWidth; ++x)

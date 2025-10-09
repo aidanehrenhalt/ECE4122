@@ -30,11 +30,11 @@ bool parseArgs(int argc, char *argv[], int &numThreads, int &cellSize, int &wind
     cellSize = 5;
     windowWidth = 800;
     windowHeight = 600;
-    // procType = "THRD";    
+    procType = "THRD";    
     
     // For Basic Implementation, Set Default to Sequential (SEQ)
     // Ensure Default is Multithreading (THRD) for final submission.
-    procType = "SEQ";
+    // procType = "SEQ";
 
     for (int i = 1; i < argc; i++)
     {
