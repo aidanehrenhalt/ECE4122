@@ -26,11 +26,13 @@ class GameOfLife
         int windowWidth;               // Window width (px)
         int windowHeight;              // Window height (px)
         int cellSize;                 // Cell size (px)
+        int gridWidth;                // Grid width (cells)
+        int gridHeight;               // Grid height (cells)
         int numThreads;               // Number of threads
         std::string procType;         // Processing type: "SEQ", "THRD", "OMP"
 
-        std::vector<std::vector<bool>> currentGrid; // Current state of the grid
-        std::vector<std::vector<bool>> nextGrid;    // Next state of the grid
+        std::vector<std::vector<uint8_t>> currGrid; // Current state of the grid
+        std::vector<std::vector<uint8_t>> nextGrid;    // Next state of the grid
 
         sf::RectangleShape cellShape; // Shape for rendering cells
 
@@ -57,6 +59,28 @@ class GameOfLife
     Description: Count the number of neighboring cells that are alive
     */
     int countNeighbors(int x, int y) const;
+
+    /*
+    Function Name: computeCellState
+    Inputs: bool currState, int numNeighbors
+    Return: bool (next cell state)
+
+    Description: Helper function for computing cell state based on number of neighbors
+    (Follows rules according to Conway's Game of Life)
+    */
+    inline bool computeCellState(bool currState, int numNeighbors) const
+    {
+        if (currState)
+        {
+            // Cell is alive - Apply rule: Stay alive if 2 or 3 neighbors
+            return (numNeighbors == 2 || numNeighbors == 3);
+        }
+        else
+        {
+            // Cell is dead - Apply rule: Become alive if exactly 3 neighbors
+            return (numNeighbors == 3);
+        }
+    }
 
     public:
         /*
