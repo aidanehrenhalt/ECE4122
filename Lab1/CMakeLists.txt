@@ -9,6 +9,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Point to your SFML installation
 set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../SFML-2.6.1/install" ${CMAKE_PREFIX_PATH})
 
+# Debugging for PACE-ICE
+if(NOT EXISTS ${SFML_DIR})
+    set(SFML_DIR "/home/hice1/aehrenhalt3/SFML-2.6.1/build")
+endif()
+
 # Find SFML
 find_package(SFML 2.6 COMPONENTS graphics window system REQUIRED)
 
