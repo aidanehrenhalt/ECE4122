@@ -519,12 +519,17 @@ add_executable(playground
 	common/shader.hpp
 
 	## Ace - Adding Extra Dependencies
-	common/shader.cpp
-	common/shader.hpp
 	common/controls.cpp
 	common/controls.hpp
 	common/texture.cpp
 	common/texture.hpp
+	common/objloader.cpp
+	common/objloader.hpp
+	common/vboindexer.cpp
+	common/vboindexer.hpp
+	
+	tutorial09_vbo_indexing/StandardShading.vertexshader
+	tutorial09_vbo_indexing/StandardShading.fragmentshader
 )
 target_link_libraries(playground
 	${ALL_LIBS}

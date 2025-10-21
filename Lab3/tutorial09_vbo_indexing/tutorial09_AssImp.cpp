@@ -88,8 +88,9 @@ int main( void )
 	GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
 	GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
 
-	// Load the texture
+	// Load the textures
 	GLuint Texture = loadDDS("uvmap.DDS");
+	GLuint planeTexture = loadBMP_custom("ElaR6Frost.bmp");
 	
 	// Get a handle for our "myTextureSampler" uniform
 	GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
@@ -124,6 +125,51 @@ int main( void )
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
 
+	// ADD CODE FOR GREEN PLANE HERE
+	float planeSize = 8.0f; // Adjust based on head positioning
+	std::vector<glm::vec3> planeVertices = {
+		glm::vec3(-planeSize, -planeSize, 0.0f),
+		glm::vec3( planeSize, -planeSize, 0.0f),
+		glm::vec3( planeSize,  planeSize, 0.0f),
+		glm::vec3(-planeSize,  planeSize, 0.0f)
+	};
+
+	std::vector<glm::vec2> planeUVs = {
+		glm::vec2(0.0f, 0.0f),
+		glm::vec2(1.0f, 0.0f),
+		glm::vec2(1.0f, 1.0f),
+		glm::vec2(0.0f, 1.0f)
+	};
+
+	std::vector<glm::vec3> planeNormals = {
+		glm::vec3(0.0f, 0.0f, 1.0f),
+		glm::vec3(0.0f, 0.0f, 1.0f),
+		glm::vec3(0.0f, 0.0f, 1.0f),
+		glm::vec3(0.0f, 0.0f, 1.0f)
+	};
+
+	std::vector<unsigned short> planeIndices = {0, 1, 2, 0, 2, 3};
+
+	GLuint planeVertexBuffer;
+	glGenBuffers(1, &planeVertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, planeVertexBuffer);
+	glBufferData(GL_ARRAY_BUFFER, planeVertices.size() * sizeof(glm::vec3), &planeVertices[0], GL_STATIC_DRAW);
+
+	GLuint planeUVBuffer;
+	glGenBuffers(1, &planeUVBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, planeUVBuffer);
+	glBufferData(GL_ARRAY_BUFFER, planeUVs.size() * sizeof(glm::vec2), &planeUVs[0], GL_STATIC_DRAW);
+
+	GLuint planeNormalBuffer;
+	glGenBuffers(1, &planeNormalBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, planeNormalBuffer);
+	glBufferData(GL_ARRAY_BUFFER, planeNormals.size() * sizeof(glm::vec3), &planeNormals[0], GL_STATIC_DRAW);
+
+	GLuint planeElementBuffer;
+	glGenBuffers(1, &planeElementBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planeElementBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, planeIndices.size() * sizeof(unsigned short), &planeIndices[0], GL_STATIC_DRAW);
+
 	// Get a handle for our "LightPosition" uniform
 	glUseProgram(programID);
 	GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
@@ -131,6 +177,9 @@ int main( void )
 	// For speed computation
 	double lastTime = glfwGetTime();
 	int nbFrames = 0;
+
+	// LIGHT
+	bool lightOn = true;
 
 	do{
 
@@ -163,58 +212,136 @@ int main( void )
 		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
 		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
 
-		glm::vec3 lightPos = glm::vec3(4,4,4);
+		// LIGHT TOGGLE WITH 'L' KEY
+		static bool lKeyPressed = false;
+		if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
+			if (!lKeyPressed) {
+				lightOn = !lightOn;
+				lKeyPressed = true;
+			}
+		} else {
+				lKeyPressed = false; // Reset on Release
+		}
+
+		// Set Light
+		glm::vec3 lightPos;
+		if (lightOn) {
+			lightPos = glm::vec3(4, 4, 4);
+		} else {
+			lightPos = glm::vec3(0, 0, 0);
+		}
+
 		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
-		// Bind our texture in Texture Unit 0
+		// RENDER 8 HEAD OBJECTS
+		int numHeads = 8;
+		float radius = 3.5f;
+
+		for (int i = 0; i < numHeads; i++) {
+			float angle = (2.0f * 3.14 * i) / numHeads;
+
+			// Create ModelMatrix for individual heads
+			glm::mat4 ModelMatrix = glm::mat4(1.0);
+
+			// Circular Positioning
+			float x = radius * cos(angle);
+			float y = radius * sin(angle);
+			ModelMatrix = glm::translate(ModelMatrix, glm::vec3(x,y, 0.0f));
+
+			// Face away from center
+			float rotationAngle = angle + 3.14/2.0f;
+			ModelMatrix = glm::rotate(ModelMatrix, rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+
+			// Adjust Head Position
+			ModelMatrix = glm::rotate(ModelMatrix, -3.14f/2.0f, glm::vec3(-1.0f, 0.0f, 0.0f));
+			ModelMatrix = glm::translate(ModelMatrix, glm::vec3(0.0f, 1.0f, 0.0f));
+
+			glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+
+			// Transformation Matrix
+			glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+			glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+
+			// Texture
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, Texture);
+			glUniform1i(TextureID, 0);
+
+			// Vertex Attributes
+			// 1rst attribute buffer : vertices
+			glEnableVertexAttribArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+			glVertexAttribPointer(
+				0,                  // attribute
+				3,                  // size
+				GL_FLOAT,           // type
+				GL_FALSE,           // normalized?
+				0,                  // stride
+				(void*)0            // array buffer offset
+			);
+
+			// 2nd attribute buffer : UVs
+			glEnableVertexAttribArray(1);
+			glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+			glVertexAttribPointer(
+				1,                                // attribute
+				2,                                // size
+				GL_FLOAT,                         // type
+				GL_FALSE,                         // normalized?
+				0,                                // stride
+				(void*)0                          // array buffer offset
+			);
+
+			// 3rd attribute buffer : normals
+			glEnableVertexAttribArray(2);
+			glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+			glVertexAttribPointer(
+				2,                                // attribute
+				3,                                // size
+				GL_FLOAT,                         // type
+				GL_FALSE,                         // normalized?
+				0,                                // stride
+				(void*)0                          // array buffer offset
+			);
+
+			// Draw Head
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+			glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, (void*)0);
+		}
+
+		// RENDER GREEN RECTANGLE
+		glm::mat4 planeModelMatrix = glm::mat4(1.0);
+		glm::mat4 planeMVP = ProjectionMatrix * ViewMatrix * planeModelMatrix;
+
+		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &planeMVP[0][0]);
+		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &planeModelMatrix[0][0]);
+
+		// Bind our texture in Texture Unit 0 -- Rectangle Texture
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, Texture);
+		glBindTexture(GL_TEXTURE_2D, planeTexture);
 		// Set our "myTextureSampler" sampler to use Texture Unit 0
 		glUniform1i(TextureID, 0);
 
-		// 1rst attribute buffer : vertices
+		// ACE
 		glEnableVertexAttribArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-		glVertexAttribPointer(
-			0,                  // attribute
-			3,                  // size
-			GL_FLOAT,           // type
-			GL_FALSE,           // normalized?
-			0,                  // stride
-			(void*)0            // array buffer offset
-		);
+		glBindBuffer(GL_ARRAY_BUFFER, planeVertexBuffer);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-		// 2nd attribute buffer : UVs
 		glEnableVertexAttribArray(1);
-		glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-		glVertexAttribPointer(
-			1,                                // attribute
-			2,                                // size
-			GL_FLOAT,                         // type
-			GL_FALSE,                         // normalized?
-			0,                                // stride
-			(void*)0                          // array buffer offset
-		);
+		glBindBuffer(GL_ARRAY_BUFFER, planeUVBuffer);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-		// 3rd attribute buffer : normals
 		glEnableVertexAttribArray(2);
-		glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-		glVertexAttribPointer(
-			2,                                // attribute
-			3,                                // size
-			GL_FLOAT,                         // type
-			GL_FALSE,                         // normalized?
-			0,                                // stride
-			(void*)0                          // array buffer offset
-		);
+		glBindBuffer(GL_ARRAY_BUFFER, planeNormalBuffer);
+		glVertexAttribPointer(2,3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 		// Index buffer
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planeElementBuffer);
 
-		// Draw the triangles !
+		// Draw the triangles!
 		glDrawElements(
 			GL_TRIANGLES,      // mode
-			indices.size(),    // count
+			planeIndices.size(),    // count
 			GL_UNSIGNED_SHORT,   // type
 			(void*)0           // element array buffer offset
 		);
@@ -236,6 +363,14 @@ int main( void )
 	glDeleteBuffers(1, &uvbuffer);
 	glDeleteBuffers(1, &normalbuffer);
 	glDeleteBuffers(1, &elementbuffer);
+
+	// ACE
+	glDeleteBuffers(1, &planeVertexBuffer);
+	glDeleteBuffers(1, &planeUVBuffer);
+	glDeleteBuffers(1, &planeNormalBuffer);
+	glDeleteBuffers(1, &planeElementBuffer);
+
+	// Cleanup VBO and shader (cont.)
 	glDeleteProgram(programID);
 	glDeleteTextures(1, &Texture);
 	glDeleteVertexArrays(1, &VertexArrayID);
