@@ -517,6 +517,14 @@ add_executable(playground
 	playground/playground.cpp
 	common/shader.cpp
 	common/shader.hpp
+
+	## Ace - Adding Extra Dependencies
+	common/shader.cpp
+	common/shader.hpp
+	common/controls.cpp
+	common/controls.hpp
+	common/texture.cpp
+	common/texture.hpp
 )
 target_link_libraries(playground
 	${ALL_LIBS}
