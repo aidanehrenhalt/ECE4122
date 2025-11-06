@@ -143,12 +143,12 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    // Grid Size - Include boundaries: (N + 1) x (N + 1) = Total Points
-    int gridSize = N + 1;
+    // Grid Size - Include boundaries: (N + 2) x (N + 2) = Total Points
+    int gridSize = N + 2;
     int totalPoints = gridSize * gridSize;
 
     std::cout << "Running Head Conduction Sim with: " << std::endl;
-    std::cout << "Grid Size: " << gridSize << "x" << gridSize << " (" << totalPoints << " points) " << std::endl;
+    std::cout << "Grid Size: " << gridSize - 2 << "x" << gridSize - 2 << " (" << totalPoints << " points) " << std::endl;
     std::cout << "Iterations: " << iterations << std::endl;
 
     // Allocate / Init Host Array
@@ -176,8 +176,11 @@ int main(int argc, char* argv[])
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
+    // Ensure Device is Ready Before Starting Timer
+    cudaDeviceSynchronize();
+    
     // Start Timing
-    cudaEventRecord(start);
+    cudaEventRecord(start, 0);
 
     // Jacobi Iterations
     for (int i = 0; i < iterations; i++)
@@ -195,7 +198,7 @@ int main(int argc, char* argv[])
     cudaDeviceSynchronize();
 
     // Stop Timing
-    cudaEventRecord(stop);
+    cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
 
     // Calculate Time Elapsed
