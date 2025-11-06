@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(CUDAToolkit REQUIRED)
 
 # Set CUDA Architecture (Adjust based on target GPU)
-set(CMAKE_CUDA_ARCHITECTURES 70 75)
+set(CMAKE_CUDA_ARCHITECTURES 60 70 75)
 
 # Compiler Flags -- Note: Letter 'O' not Number '0'
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
