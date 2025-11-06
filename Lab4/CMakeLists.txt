@@ -31,7 +31,6 @@ target_link_libraries(lab4 CUDA::cudart)
 # Custom Target for Clean Up
 add_custom_target(clean_all
     COMMAND ${CMAKE_COMMAND} -E remove lab4
-    COMMAND ${CMAKE_COMMAND} -E remove finalTemperature.csv
     COMMAND ${CMAKE_COMMAND} -E remove_directory CMakeFiles
     COMMAND ${CMAKE_COMMAND} -E remove CMakeCache.txt
     COMMAND ${CMAKE_COMMAND} -E remove cmake_install.cmake
