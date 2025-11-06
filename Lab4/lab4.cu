@@ -191,6 +191,9 @@ int main(int argc, char* argv[])
         d_new = temp;
     }
 
+    // Ensure GPU Work Completes Before Stopping Timer
+    cudaDeviceSynchronize();
+
     // Stop Timing
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
