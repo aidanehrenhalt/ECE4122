@@ -205,6 +205,13 @@ int main(int argc, char* argv[])
     // Copy Final Result Back to Host Array
     cudaMemcpy(h.data(), d_old, bytes, cudaMemcpyDeviceToHost); // d_old has final result because of last swap
 
+    // Write Output to CSV (Unless Quit Flag Set)
+    if (!quit)
+    {
+        writeOutputToCSV(h, gridSize, "finalTemperature.csv");
+        std::cout << "Results stored in finalTemperature.csv" << std::endl;
+    }
+
     // Clean Up Device Mem
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
