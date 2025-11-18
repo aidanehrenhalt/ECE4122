@@ -175,7 +175,7 @@ class ECE_UAV
      */
     ECE_UAV(Vec3 initial_pos) : pos(initial_pos), velocity(0, 0, 0), acceleration(0, 0, 0),
                                 mass(1.0), current_phase(GROUND_IDLE), target_pos(0, 0, 50),
-                                time_on_sphere(0.0), end_sim(false)
+                                time_on_sphere(0.0), local_sim_time(0.0), end_sim(false)
     {
         // Init PID controllers with starting gains -- Generates desired velocity
         pid_x.setGains(4.0, 0.2, 2.0);   // P, I, D gains for X position
@@ -286,7 +286,8 @@ class ECE_UAV
             }
 
             // Calculate Acceleration (F = ma)
-            acceleration.z -= 10.0; // Gravity
+            acceleration = control_force / mass; // Acceleration Calculation
+            acceleration.z -= 10.0; // Account for Gravity
 
             // Calculate Velocity: v = v0 + a * dt
             velocity = velocity + acceleration * dt;
@@ -380,11 +381,11 @@ class ECE_UAV
     /**
      * Set UAV's velocity - Collision handling
      */
-    void setVelocity(const Vec3 &newVel)
+    void setVelocity(const Vec3 &newVelocity)
     {
         std::lock_guard<std::mutex> lock(data_mutex);
 
-        velocity = newVel;
+        velocity = newVelocity;
     }
 
     /**
@@ -472,6 +473,13 @@ int main(int argc, char** argv)
     // Initialize UAV Fleet at starting positions
     initializeUAVFleet();
 
+    // Testing Phase 2 - Drone Movement Control + Phase Control
+    for (int i = 0; i < uavFleet.size(); i++)
+    {
+        Vec3 pos = uavFleet[i]->getPos();
+        std::cout << "UAV[" << i << "] starts at: (" << pos.x << ", " << pos.y << ", " << pos.z << ")\n";
+    }
+
     // Start UAV Threads
     std::cout << "Starting UAV Threads...\n";
     for (ECE_UAV *uav : uavFleet)
@@ -479,14 +487,13 @@ int main(int argc, char** argv)
         uav->startThread();
     }
 
-
     // TODO: Initialize OpenGL Visualization Here
     
     // Temp: Simple Simulation Loop
-    std::cout << "Running Simulation Loop for 5 seconds for testing...\n";
+    std::cout << "Running Simulation Loop for 30 seconds for testing...\n";
     
     double dt = 0.03; // 30 ms per iteration
-    double maxTime = 5.0; // Run for 5 seconds for testing
+    double maxTime = 30.0; // Run for 30 seconds for testing
 
     while (globalSimTime.load() < maxTime)
     {
