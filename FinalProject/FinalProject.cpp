@@ -9,12 +9,19 @@
 
 #include <cmath>
 #include <mutex>
+#include <ctime>
 #include <atomic>
 #include <chrono>
 #include <thread>
 #include <vector>
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
+
+// Define M_PI (for use if not defined)
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 // 3D Vector class for position, velocity, and forces
 class Vec3 {
@@ -159,6 +166,11 @@ class ECE_UAV
         double local_sim_time; // Track Local Sim Time
         bool end_sim;
 
+        // Sphere Target Position
+        Vec3 sphere_center;
+        double sphere_radius;
+        Vec3 sphere_target;
+
         // PID controllers for x, y, z axes
         PIDController pid_x;
         PIDController pid_y;
@@ -175,7 +187,9 @@ class ECE_UAV
      */
     ECE_UAV(Vec3 initial_pos) : pos(initial_pos), velocity(0, 0, 0), acceleration(0, 0, 0),
                                 mass(1.0), current_phase(GROUND_IDLE), target_pos(0, 0, 50),
-                                time_on_sphere(0.0), local_sim_time(0.0), end_sim(false)
+                                sphere_center(0, 0, 50), sphere_radius(10.0), sphere_target(0, 0, 0),
+                                time_on_sphere(0.0), end_sim(false)
+                                
     {
         // Init PID controllers with starting gains -- Generates desired velocity
         pid_x.setGains(4.0, 0.2, 2.0);   // P, I, D gains for X position
@@ -192,7 +206,7 @@ class ECE_UAV
     }
 
     /**
-     * JOin ECE_UAV thread (for cleanup)
+     * Join ECE_UAV thread (for cleanup)
      */
     void joinThread()
     {
@@ -216,6 +230,68 @@ class ECE_UAV
     }
 
     /**
+     * Generate randomized sphere target position for ON_SPHERE phase
+     * 
+     * @return random point on virtual sphere's surface
+     */
+    Vec3 generateRandomSphereTarget()
+    {
+        Vec3 random_point;
+
+        // Generate random spherical coordinates - Random points until they fall on the sphere, once they fall on the sphere's surface translate to actual sphere
+        do
+        {
+            random_point.x = ((double)rand() / RAND_MAX) * 2.0 - 1.0; // [-1, 1]
+            random_point.y = ((double)rand() / RAND_MAX) * 2.0 - 1.0; // [-1, 1]
+            random_point.z = ((double)rand() / RAND_MAX) * 2.0 - 1.0; // [-1, 1]
+        } while (random_point.magnitude() > 1.0 || random_point.magnitude() < 0.01);
+
+        // Normalizing (Scaling and Translating) to virtual sphere surface
+        random_point = random_point.normalized();
+        random_point = sphere_center + random_point * sphere_radius;
+
+        return random_point;
+    }
+
+    /**
+     * Projecting UAV position onto the virtual sphere
+     * 
+     * @param current_pos current position of the UAV
+     * 
+     * @return projected position on the virtual sphere
+     */
+    Vec3 projectOntoSphere(const Vec3& current_pos)
+    {
+        Vec3 direction = current_pos - sphere_center;
+        double distance = direction.magnitude();
+
+        if (distance > 0)
+        {
+            return sphere_center + direction.normalized() * sphere_radius;
+        }
+
+        return current_pos;
+    }
+
+    /**
+     * Calculate tangential velocity - Remove velocity component in direction towards (or away from) sphere center
+     * 
+     * @param velocity current velocity vector
+     * @param pos current position
+     * 
+     * @return tangential velocity component
+     */
+    Vec3 getTangentialVelocity(const Vec3 &velocity, const Vec3 &pos)
+    {
+        Vec3 radial = (pos - sphere_center).normalized();
+        double radial_component = velocity.x * radial.x + velocity.y * radial.y + velocity.z * radial.z;
+
+        Vec3 radial_velocity = radial * radial_component;
+        
+        return velocity - radial_velocity; // Remove radial velocity component
+    }
+
+    /**
      * Update kinematics based on physics forces (used by threadFunction)
      * Uses constant acceleration motion equations
      * 
@@ -225,13 +301,22 @@ class ECE_UAV
     {
         std::lock_guard<std::mutex> lock(data_mutex);
 
-        // Incremenet Local Sim Time
-        local_sim_time += dt;
+        // Current Sim Time
+        double current_time = globalSimTime.load();
 
         // Groud Idle - Wait for 5 seconds before climbing
         if (current_phase == GROUND_IDLE)
         {
-            if (local_sim_time >= 5.0)
+            // Wait for 5 seconds before climbing
+            if (current_time < 5.0)
+            {
+                // Stay on Ground (GROUD_IDLE)
+                velocity = Vec3(0, 0, 0);
+                acceleration = Vec3(0, 0, 0);
+                
+                return;
+            }
+            else
             {
                 current_phase = CLIMBING;
 
@@ -240,9 +325,6 @@ class ECE_UAV
                 pid_y.reset();
                 pid_z.reset();
             }
-
-            // Stay on Ground (No Movement)
-            return;
         }
 
         // Climbing - Move towards target position
@@ -315,7 +397,15 @@ class ECE_UAV
                 time_on_sphere = 0.0; // Reset UAV time on sphere
 
                 // Add UAV movement on sphere surface
+                sphere_target = generateRandomSphereTarget();
+
+                // Reset PID Controllers
+                pid_x.reset();
+                pid_y.reset();
+                pid_z.reset();
             }
+
+            return;
         }
 
         // On Sphere - UAV on virtual sphere surface
@@ -324,33 +414,95 @@ class ECE_UAV
             // Update time on sphere
             time_on_sphere += dt;
 
-            // Implement sphere surface flight
+            // Calculate distance to sphere target
+            double distance_to_sphere_target = pos.distance(sphere_target);
 
-            // Simple holding pattern near target pos (temp)
-            Vec3 pos_error = target_pos - pos;
+            // Generate new random target when close to arriving at current target
+            if (distance_to_sphere_target < 2.0)
+            {
+                sphere_target = generateRandomSphereTarget();
+            }
+
+            // Calculate position error relative to sphere target
+            Vec3 pos_error = sphere_target - pos;
+
+            // Use PID Controllers to generate desired velocity
             double desired_vx = pid_x.calculate(pos_error.x, dt);
             double desired_vy = pid_y.calculate(pos_error.y, dt);
             double desired_vz = pid_z.calculate(pos_error.z, dt);
-            
+
+            // Limit velocity to speed between 2 - 10 m/s - Target ~6 m/s for stable flight path
+            double target_speed = 6.0;
             Vec3 desired_velocity(desired_vx, desired_vy, desired_vz);
+            double desired_speed = desired_velocity.magnitude();
+
+            if (desired_speed > 0)
+            {
+                desired_velocity = desired_velocity.normalized() * target_speed; // Scale to target velocity
+            }
+
+            // Calculate velocity error
             Vec3 velocity_error = desired_velocity - velocity;
 
+            // Control force based on velocity_error
             double kp_velocity = 3.0;
             Vec3 control_force = velocity_error * kp_velocity;
-            control_force.z += 10.0; // Gravity Compensation
 
-            double force_mag = control_force.magnitude();
+            // Gravity Compensation
+            double gravity_force = 10.0;
+            control_force.z += gravity_force;
+
+            // Constrain radial force to keep UAV on virtual sphere surface - Calculate radial direction from sphere center
+            Vec3 radial = (pos - sphere_center).normalized();
+            double distance_from_center = pos.distance(sphere_center);
+            double radial_error = sphere_radius - distance_from_center;
+
+            // Apply strong radial force to keep UAV on sphere surface
+            double kp_radial = 50.0; // Radial control gain
+            Vec3 radial_force = sphere_radius - distance_from_center;
+
+            control_force = control_force + radial_force;
+
+            // Calculation accounting for gravity
+            Vec3 gravity(0, 0, -gravity_force);
+            Vec3 total_force = control_force + gravity;
+
+            // Apply 20 N force magnitude limit
+            double force_mag = total_force.magnitude();
 
             if (force_mag > 20.0)
             {
-                control_force = control_force.normalized() * 20.0;
+                total_force = total_force.normalized() * 20.0;
             }
 
-            acceleration = control_force / mass;
-            acceleration.z -= 10.0; // Gravity
-            
+            // Calculate acceleration: F = ma
+            acceleration = total_force / mass;
+
+            // Update velocity
             velocity = velocity + acceleration * dt;
+
+            // Constrain velocity to tangential component - Helps keep UAV moving along virtual sphere surface
+            velocity = getTangentialVelocity(velocity, pos);
+
+            // Limit speed to range 2-10 m/s
+            double current_speed = velocity.magnitude();
+
+            if (current_speed > 10.0)
+            {
+                velocity = velocity.normalized() * 10.0;
+            }
+            else if (current_speed < 2.0 && current_speed > 0)
+            {
+                velocity = velocity.normalized() * 2.0;
+            }
+
+            // Update position
             pos = pos + velocity * dt + acceleration * (0.5 * dt * dt);
+
+            // Project position onto virtual sphere surface
+            pos = projectOntoSphere(pos);
+
+            return;
         }
     }
 
@@ -460,6 +612,84 @@ void initializeUAVFleet()
     std::cout << "Initialized UAV Fleet with " << uavFleet.size() << " UAVs.\n" << std::flush;
 }
 
+
+
+/**
+ * Collision handling for individual UAVs
+ * If bounding boxes come within 1 cm (0.01 m), handle collision by swapping velocities
+ */
+void collisionHandling()
+{
+    const double collision_distance = 0.01; // 0.01 m (1 cm)
+    const double bounding_box_size = 0.20; // 0.20 m (20 cm) bounding box around UAV
+
+    // Check for collisions between UAVs
+    for (size_t i = 0; i < uavFleet.size(); i++)
+    {
+        for (size_t j = i + 1; j < uavFleet.size(); j++)
+        {
+            Vec3 pos_i = uavFleet[i]->getPos();
+            Vec3 pos_j = uavFleet[j]->getPos();
+
+            double distance = pos_i.distance(pos_j); // Calculate distance between UAVs
+
+            // Check if bounding boxes are colliding
+            if (distance < (bounding_box_size + collision_distance))
+            {
+                // Swap velocities (like the UAVs are bouncing off and going opposite directions)
+                Vec3 velocity_i = uavFleet[i]->getVelocity();
+                Vec3 velocity_j = uavFleet[j]->getVelocity();
+
+                uavFleet[i]->setVelocity(velocity_j);
+                uavFleet[j]->setVelocity(velocity_i);
+            }
+        }
+    }
+}
+
+
+
+/**
+ * Check if simulation meets completion criteria
+ * All UAVs must be within 10m of the virtual sphere center (0, 0, 50) AND have spent 60 seconds flying on the virtual sphere
+ * 
+ * @return true if simulation should end, false otherwise
+ */
+bool checkCompletionConditions()
+{
+    Vec3 target_point(0, 0, 50);
+    const double required_sphere_time = 60.0; // 60 sec on sphere
+    const double proximity_threshold = 10.0; // 10 m proximity
+
+    bool all_conditions_met = true;
+
+    for (ECE_UAV *uav : uavFleet)
+    {
+        Vec3 pos = uav->getPos();
+        double distance = pos.distance(target_point);
+        double time_on_sphere = uav->getTimeOnSphere();
+
+        if (distance > proximity_threshold)
+        {
+            all_conditions_met = false;
+
+            break;
+        }
+
+        // Check if UAV has flown for the 60 sec on sphere
+        if (time_on_sphere < required_sphere_time)
+        {
+            all_conditions_met = false;
+
+            break;
+        }
+    }
+
+    return all_conditions_met;
+}
+
+
+
 /**
  * Main function to run UAV simulation
  * 
@@ -489,35 +719,41 @@ int main(int argc, char** argv)
 
     // TODO: Initialize OpenGL Visualization Here
     
-    // Temp: Simple Simulation Loop
-    std::cout << "Running Simulation Loop for 30 seconds for testing...\n";
-    
-    double dt = 0.03; // 30 ms per iteration
-    double maxTime = 30.0; // Run for 30 seconds for testing
+    // Simulation Loop
+    std::cout << "Running Simulation... \n";
 
-    while (globalSimTime.load() < maxTime)
+    double dt = 0.03; // 30 ms per iteration
+
+    while (true)
     {
         // Update global simulation time
         globalSimTime.store(globalSimTime.load() + dt);
 
-        // TODO: Check Collisions
-        // TODO: Rendering
-        // TODO: Checking Completion Conditions
+        // Handle UAV collisions
+        collisionHandling();
 
-        // Sleep to maintain time step (30 ms)
+        // Check if simulation meets completion criteria
+        if (checkCompletionConditions())
+        {
+            std::cout << "\n=== SIMULATION COMPLETE ===\n";
+            std::cout << "All UAVs have reached target on virtual sphere and remained on sphere surface for 60 seconds.\n";
+
+            break;
+        }
+
+        // TODO: Rendering with OpenGL
+
+        // Sleep to maintain correct time stop interval (30 ms)
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
 
-        // Print status every second
+        // Print status every 2 second interval
         static double last_print_time = 0.0;
-        if (globalSimTime.load() - last_print_time >= 1.0)
+
+        if (globalSimTime.load() - last_print_time >= 2.0)
         {
             last_print_time = globalSimTime.load();
 
-            // Print position of first UAV for testing
-            std::cout << "Simulation Time: " << globalSimTime.load() << " sec - UAV[0] position: ("
-                      << uavFleet[0]->getPos().x << ", "
-                      << uavFleet[0]->getPos().y << ", "
-                      << uavFleet[0]->getPos().z << ")\n" << std::flush;
+            ////
         }
     }
 
