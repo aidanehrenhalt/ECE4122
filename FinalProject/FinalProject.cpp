@@ -156,6 +156,7 @@ class ECE_UAV
 
         Vec3 target_pos;
         double time_on_sphere;
+        double local_sim_time; // Track Local Sim Time
         bool end_sim;
 
         // PID controllers for x, y, z axes
@@ -224,7 +225,132 @@ class ECE_UAV
     {
         std::lock_guard<std::mutex> lock(data_mutex);
 
-        // Implement Later
+        // Incremenet Local Sim Time
+        local_sim_time += dt;
+
+        // Groud Idle - Wait for 5 seconds before climbing
+        if (current_phase == GROUND_IDLE)
+        {
+            if (local_sim_time >= 5.0)
+            {
+                current_phase = CLIMBING;
+
+                // Reset PID Controllers
+                pid_x.reset();
+                pid_y.reset();
+                pid_z.reset();
+            }
+
+            // Stay on Ground (No Movement)
+            return;
+        }
+
+        // Climbing - Move towards target position
+        if (current_phase == CLIMBING)
+        {
+            // Calculate position errors
+            Vec3 pos_error = target_pos - pos;
+
+            // Use PID controllers to generate desired velocities
+            double desired_vx = pid_x.calculate(pos_error.x, dt);
+            double desired_vy = pid_y.calculate(pos_error.y, dt);
+            double desired_vz = pid_z.calculate(pos_error.z, dt);
+
+            // Limit desired velocities to reasonable values (2 m/s)
+            double max_climb_velocity = 2.0;
+            Vec3 desired_velocity(desired_vx, desired_vy, desired_vz);
+            double desired_velocity_mag = desired_velocity.magnitude();
+
+            if (desired_velocity_mag > max_climb_velocity)
+            {
+                desired_velocity = desired_velocity.normalized() * max_climb_velocity;
+            }
+
+            // Calculate Velocity Error
+            Vec3 velocity_error = desired_velocity - velocity;
+
+            // Simple proportional control on velocity to get force
+            double kp_velocity = 3.0;
+            Vec3 control_force = velocity_error * kp_velocity;
+
+            // Add gravity (10 N downwards per 1 kg of mass)
+            double gravity_force = 10.0; // 10 N in -Z direction
+            control_force.z += gravity_force;
+
+            // Apply force limits (20 N total)
+            double force_limit = control_force.magnitude();
+
+            if (force_limit > 20.0)
+            {
+                control_force = control_force.normalized() * 20.0;
+            }
+
+            // Calculate Acceleration (F = ma)
+            acceleration.z -= 10.0; // Gravity
+
+            // Calculate Velocity: v = v0 + a * dt
+            velocity = velocity + acceleration * dt;
+
+            // Calculate Position: x = x0 + v * dt + 0.5 * a * dt^2
+            pos = pos + velocity * dt + acceleration * (0.5 * dt * dt);
+
+            // Groud Limits = Can't go below z = 0
+            if (pos.z < 0)
+            {
+                pos.z = 0;
+                
+                if (velocity.z < 0)
+                {
+                    velocity.z = 0;
+                }
+            }
+
+            // Check if reached target position (within 0.5 m) before switching to ON_SPHERE
+            double distance_to_target = pos.distance(target_pos);
+
+            if (distance_to_target <= 10.0) // Check within 10m of sphere
+            {
+                current_phase = ON_SPHERE;
+                time_on_sphere = 0.0; // Reset UAV time on sphere
+
+                // Add UAV movement on sphere surface
+            }
+        }
+
+        // On Sphere - UAV on virtual sphere surface
+        if (current_phase == ON_SPHERE)
+        {
+            // Update time on sphere
+            time_on_sphere += dt;
+
+            // Implement sphere surface flight
+
+            // Simple holding pattern near target pos (temp)
+            Vec3 pos_error = target_pos - pos;
+            double desired_vx = pid_x.calculate(pos_error.x, dt);
+            double desired_vy = pid_y.calculate(pos_error.y, dt);
+            double desired_vz = pid_z.calculate(pos_error.z, dt);
+            
+            Vec3 desired_velocity(desired_vx, desired_vy, desired_vz);
+            Vec3 velocity_error = desired_velocity - velocity;
+
+            double kp_velocity = 3.0;
+            Vec3 control_force = velocity_error * kp_velocity;
+            control_force.z += 10.0; // Gravity Compensation
+
+            double force_mag = control_force.magnitude();
+
+            if (force_mag > 20.0)
+            {
+                control_force = control_force.normalized() * 20.0;
+            }
+
+            acceleration = control_force / mass;
+            acceleration.z -= 10.0; // Gravity
+            
+            velocity = velocity + acceleration * dt;
+            pos = pos + velocity * dt + acceleration * (0.5 * dt * dt);
+        }
     }
 
     /**
