@@ -24,6 +24,83 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+// Global texture ID for Football Field
+GLuint fieldTextureID = 0;
+
+/**
+* Load BMP texture from file
+* 
+* @param filename path to BMP file
+*
+* @return OpenGL texture ID (0 if failure)
+*/
+GLuint loadBMPTexture(const char *filename)
+{
+    // Open file
+    FILE *file = fopen(filename, "rb");
+    if (!file)
+    {
+        std::cerr << "Error: Unable to open texture file " << filename << "\n";
+        return 0;
+    }
+
+    // Read BMP header
+    unsigned char header[54];
+    if (fread(header, 1, 54, file) != 54)
+    {
+        std::cerr << "Error: Invalid BMP file " << filename << "\n";
+        fclose(file);
+        return 0;
+    }
+
+    // Read Image Info
+    unsigned int dataPos = *(int *) &(header[0x0A]);
+    unsigned int imageSize = *(int *) &(header[0x22]);
+    unsigned int width = *(int *) &(header[0x12]);
+    unsigned int height = *(int *) &(header[0x16]);
+
+    // Handling BMP File Missing Information
+    if (imageSize == 0)
+    {
+        imageSize = width * height * 3; // 3 bytes per pixel for RGB
+    }
+
+    if (dataPos == 0)
+    {
+        dataPos = 54; // BMP header size
+    }
+
+    // Allocate Buffer for Image Data
+    unsigned char *data = new unsigned char[imageSize];
+
+    // Read Image Data
+    fread(data, 1, imageSize, file);
+    fclose(file);
+
+    // Create OpenGL Texture
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    // Upload Texture Data to OpenGL (From BMP file)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
+
+    // Set Texture Params
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    delete[] data;
+
+    std::cout << "Successfully loaded texture: " << filename
+              << " (" << width << "x" << height << ")" << std::endl;
+
+    return textureID;
+}
+
+
+
 // 3D Vector class for position, velocity, and forces
 class Vec3 {
 public:
@@ -708,15 +785,36 @@ void renderFootballField()
     const double field_len = 109.73; // Length in meters
     const double field_width = 48.77;  // Width in meters
 
-    // Draw Green Rectangle (Field)
-    glColor3f(0.0f, 1.0f, 0.0f); // Green Color
+    // Enable Texture if Loaded
+    if (fieldTextureID != 0)
+    {
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, fieldTextureID);
+        glColor3f(1.0f, 1.0f, 1.0f); // White Color for texture
+    }
+    else
+    {
+        glColor3f(0.0f, 1.0f, 0.0f); // Green Color
+    }
 
     glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f);
         glVertex3f(-field_len / 2, -field_width / 2, 0.0f);
+
+        glTexCoord2f(1.0f, 0.0f);
         glVertex3f(field_len / 2, -field_width / 2, 0.0f);
+
+        glTexCoord2f(1.0f, 1.0f);
         glVertex3f(field_len / 2, field_width / 2, 0.0f);
+
+        glTexCoord2f(0.0f, 1.0f);
         glVertex3f(-field_len / 2, field_width / 2, 0.0f);
     glEnd();
+
+    if (fieldTextureID != 0)
+    {
+        glDisable(GL_TEXTURE_2D);
+    }
 
     glPopMatrix();
 }
@@ -739,7 +837,7 @@ void renderVirtualSphere()
     glTranslatef(0.0f, 0.0f, 50.0f); // Center at (0, 0, 50)
 
     // Set color with alpha for transparency (White)
-    glColor4f(1.0f, 1.0f, 1.0f, 0.2f); // White with 20% opacity
+    glColor4f(1.0f, 1.0f, 1.0f, 0.1f); // White with 10% opacity
 
     // Draw Sphere using GLU quadric
     GLUquadric *quad = gluNewQuadric();
@@ -754,7 +852,7 @@ void renderVirtualSphere()
 
 
 /**
-* Render individual UAV using OpenGL (Small Cube 50cm x 50cm x 50cm)
+* Render individual UAV using OpenGL (Small Cube 20cm x 20cm x 20cm)
 * 
 * @param pos UAV position vector
 */
@@ -768,8 +866,8 @@ void renderUAV(const Vec3 &pos)
     // Set UAV color (Yellow)
     glColor3f(1.0f, 1.0f, 0.0f); // Yellow Color
 
-    // Draw Cube (50cm = 0.5m)
-    const double half_size = 0.25; // Half-size for cube (0.25m = 25cm)
+    // Draw Cube (20cm = 0.2m)
+    const double half_size = 0.10; // Half-size for cube (0.10m = 10cm)
 
     glBegin(GL_QUADS);
         // Front Face
@@ -1004,6 +1102,15 @@ void initOpenGL()
 
     // Set shading model
     glShadeModel(GL_SMOOTH);
+
+    // Load Football Field Texture
+    std::cout << "Loading Football Field Texture..." << std::endl;
+    fieldTextureID = loadBMPTexture("ff.bmp");
+
+    if (fieldTextureID == 0)
+    {
+        std::cerr << "Failed to load football field texture, using default green color instead." << std::endl;
+    }
 }
 
 /**
@@ -1056,6 +1163,12 @@ int main(int argc, char** argv)
         uav->joinThread();
 
         delete uav;
+    }
+
+    // Cleanup OpenGL Textures
+    if (fieldTextureID != 0)
+    {
+        glDeleteTextures(1, &fieldTextureID);
     }
 
     std::cout << "UAV Halftime Show Simulation Ended.\n";
