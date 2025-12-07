@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
+#include <GL/glut.h>
 
 // Define M_PI (for use if not defined)
 #ifndef M_PI
@@ -561,11 +562,11 @@ class ECE_UAV
      * 
      * @return current flight phase enum
      */
-    FlightPhase getFlightPhase() const
+    int getFlightPhase() const
     {
         std::lock_guard<std::mutex> lock(data_mutex);
 
-        return current_phase;
+        return static_cast<int>(current_phase);
     }
 };
 
@@ -591,6 +592,7 @@ void threadFunction(ECE_UAV *pUAV)
 // Global Variables
 std::atomic<double> globalSimTime(0.0); // Global Simulation Time (seconds)
 std::vector<ECE_UAV *> uavFleet;        // Vector of pointers to individual UAVs
+bool simulation_ended = false;          // Flag to indicate simulation end
 
 /**
  * Initialize UAV fleet at starting position on virtual field
@@ -695,43 +697,203 @@ bool checkCompletionConditions()
 
 
 /**
- * Main function to run UAV simulation
- * 
- * @param argc argument count
- * @param argv argument vector with argument values
- */
-int main(int argc, char** argv)
+* Rendering football field using OpenGL
+* Field Dimensions (120 yards x 53.33 yards) = (109.73 m x 48.77 m)
+*/
+void renderFootballField()
 {
-    std::cout << "Starting UAV Halftime Show Simulation...\n";
+    glPushMatrix();
 
-    // Initialize UAV Fleet at starting positions
-    initializeUAVFleet();
+    // Football Field Dimensions in Meters (Meters because UAV positioning in meters)
+    const double field_len = 109.73; // Length in meters
+    const double field_width = 48.77;  // Width in meters
 
-    // Testing Phase 2 - Drone Movement Control + Phase Control
-    for (int i = 0; i < uavFleet.size(); i++)
-    {
-        Vec3 pos = uavFleet[i]->getPos();
-        std::cout << "UAV[" << i << "] starts at: (" << pos.x << ", " << pos.y << ", " << pos.z << ")\n";
-    }
+    // Draw Green Rectangle (Field)
+    glColor3f(0.0f, 1.0f, 0.0f); // Green Color
 
-    // Start UAV Threads
-    std::cout << "Starting UAV Threads...\n";
+    glBegin(GL_QUADS);
+        glVertex3f(-field_len / 2, -field_width / 2, 0.0f);
+        glVertex3f(field_len / 2, -field_width / 2, 0.0f);
+        glVertex3f(field_len / 2, field_width / 2, 0.0f);
+        glVertex3f(-field_len / 2, field_width / 2, 0.0f);
+    glEnd();
+
+    glPopMatrix();
+}
+
+
+
+/**
+ * Render virtual sphere using OpenGL (Semi-Transparent Sphere Shape)
+ * Center at (0, 0, 50) with 10m radius
+ */
+void renderVirtualSphere()
+{
+    glPushMatrix();
+
+    // Enable blending for transparency
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Position and size
+    glTranslatef(0.0f, 0.0f, 50.0f); // Center at (0, 0, 50)
+
+    // Set color with alpha for transparency (White)
+    glColor4f(1.0f, 1.0f, 1.0f, 0.2f); // White with 20% opacity
+
+    // Draw Sphere using GLU quadric
+    GLUquadric *quad = gluNewQuadric();
+    gluSphere(quad, 10.0f, 30, 30); // Radius 10m, 30 slices, 30 stacks
+    gluDeleteQuadric(quad);
+
+    glDisable(GL_BLEND);
+
+    glPopMatrix();
+}
+
+
+
+/**
+* Render individual UAV using OpenGL (Small Cube 50cm x 50cm x 50cm)
+* 
+* @param pos UAV position vector
+*/
+void renderUAV(const Vec3 &pos)
+{
+    glPushMatrix();
+    
+    // Translate to UAV position
+    glTranslatef(pos.x, pos.y, pos.z);
+
+    // Set UAV color (Yellow)
+    glColor3f(1.0f, 1.0f, 0.0f); // Yellow Color
+
+    // Draw Cube (50cm = 0.5m)
+    const double half_size = 0.25; // Half-size for cube (0.25m = 25cm)
+
+    glBegin(GL_QUADS);
+        // Front Face
+        glVertex3f(-half_size, -half_size, half_size);
+        glVertex3f(half_size, -half_size, half_size);
+        glVertex3f(half_size, half_size, half_size);
+        glVertex3f(-half_size, half_size, half_size);
+
+        // Back Face
+        glVertex3f(-half_size, -half_size, -half_size);
+        glVertex3f(-half_size, half_size, -half_size);
+        glVertex3f(half_size, half_size, -half_size);
+        glVertex3f(half_size, -half_size, -half_size);
+
+        // Top Face
+        glVertex3f(-half_size, half_size, -half_size);
+        glVertex3f(-half_size, half_size, half_size);
+        glVertex3f(half_size, half_size, half_size);
+        glVertex3f(half_size, half_size, -half_size);
+
+        // Bottom Face
+        glVertex3f(-half_size, -half_size, -half_size);
+        glVertex3f(half_size, -half_size, -half_size);
+        glVertex3f(half_size, -half_size, half_size);
+        glVertex3f(-half_size, -half_size, half_size);
+
+        // Right Face
+        glVertex3f(half_size, -half_size, -half_size);
+        glVertex3f(half_size, half_size, -half_size);
+        glVertex3f(half_size, half_size, half_size);
+        glVertex3f(half_size, -half_size, half_size);
+
+        // Left Face
+        glVertex3f(-half_size, -half_size, -half_size);
+        glVertex3f(-half_size, -half_size, half_size);
+        glVertex3f(-half_size, half_size, half_size);
+        glVertex3f(-half_size, half_size, -half_size);
+    glEnd();
+
+    glPopMatrix();
+}
+
+
+
+/**
+* OpenGL Display function for rendering the entire scene
+*/
+void display()
+{
+    // Clear color and depth buffers
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    // Reset transformations
+    glLoadIdentity();
+
+    // Set camera position and orientation
+    gluLookAt(
+        80.0, 80.0, 80.0, // Camera position
+        0.0, 0.0, 30.0,   // Look at point (Center)
+        0.0, 0.0, 1.0    // Up vector
+    );
+
+    // Render field & sphere
+    renderFootballField();
+    renderVirtualSphere();
+
+    // Render all UAVs in the fleet
     for (ECE_UAV *uav : uavFleet)
     {
-        uav->startThread();
+        Vec3 pos = uav->getPos();
+        renderUAV(pos);
     }
 
-    // TODO: Initialize OpenGL Visualization Here
-    
-    // Simulation Loop
-    std::cout << "Running Simulation... \n";
+    // Swap buffers to display the rendered image
+    glutSwapBuffers();
+}
 
-    double dt = 0.03; // 30 ms per iteration
-
-    while (true)
+/**
+* OpenGL Idle function for continuous rendering (and window resizing)
+*/
+void reshape(int width, int height)
+{
+    // Prevent div by zero error
+    if (height == 0)
     {
+        height = 1;
+    }
+
+    float ratio = (float)width / (float)height;
+
+    // Set viewport to window dimensions
+    glViewport(0, 0, width, height);
+
+    // Set projection matrix
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    // Set perspective ratio
+    gluPerspective(45.0f, ratio, 0.1f, 500.0f);
+
+    // Switch back to modelview matrix
+    glMatrixMode(GL_MODELVIEW);
+}
+
+
+
+/**
+ * OpenGL Idle function for continuous rendering
+ */
+void idle()
+{
+    static auto last_update = std::chrono::steady_clock::now();
+    static double last_print_time = 0.0;
+
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_update);
+
+    // Update display every 30 ms
+    if (elapsed.count() >= 30)
+    {
+        last_update = now;
+
         // Update global simulation time
-        globalSimTime.store(globalSimTime.load() + dt);
+        globalSimTime.store(globalSimTime.load() + 0.03);
 
         // Handle UAV collisions
         collisionHandling();
@@ -739,25 +901,27 @@ int main(int argc, char** argv)
         // Check if simulation meets completion criteria
         if (checkCompletionConditions())
         {
+            simulation_ended = true;
+
             std::cout << "\n=== SIMULATION COMPLETE ===\n";
             std::cout << "All UAVs have reached target on virtual sphere and remained on sphere surface for 60 seconds.\n";
+            
+            // Stop UAV Threads
+            std::cout << "Stopping UAV Threads...\n";
+            for (auto *uav : uavFleet)
+            {
+                uav->stopThread();
+                uav->joinThread();
 
-            break;
+                delete uav; // Clean up UAV objects
+            }
         }
 
-        // TODO: Rendering with OpenGL
-
-        // Sleep to maintain correct time stop interval (30 ms)
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
-
         // Print status every 2 second interval
-        static double last_print_time = 0.0;
-
         if (globalSimTime.load() - last_print_time >= 2.0)
         {
             last_print_time = globalSimTime.load();
 
-            // Count UAVs during each phase
             int ground_idle_count = 0;
             int climbing_count = 0;
             int on_sphere_count = 0;
@@ -766,7 +930,7 @@ int main(int argc, char** argv)
 
             for (ECE_UAV *uav : uavFleet)
             {
-                auto phase = uav->getFlightPhase();
+                int phase = uav->getFlightPhase();
 
                 if (phase == 0)
                 {
@@ -787,34 +951,111 @@ int main(int argc, char** argv)
                 }
             }
 
-            // Print UAV Phase Counts
             std::cout << "\n---Sim Time: " << std::fixed << std::setprecision(1) << globalSimTime.load() << "s ---\n";
             std::cout << " Ground: " << ground_idle_count << " UAVs"
                       << " | " << " Climbing: " << climbing_count << " UAVs"
                       << " | " << " On Sphere: " << on_sphere_count << " UAVs\n";
-
+            
             if (on_sphere_count > 0)
             {
                 std::cout << " Min sphere time: " << std::setprecision(2) << min_sphere_time << " s / 60.0s \n";
             }
 
-            // DEBUGGING: Print UAV[0] details
             Vec3 pos = uavFleet[0]->getPos();
             Vec3 velocity = uavFleet[0]->getVelocity();
-                
+
             std::cout << " UAV[0] Pos: (" << std::setprecision(2) << pos.x << ", " << pos.y << ", " << pos.z << ")"
                       << " | Velocity Magnitude: " << velocity.magnitude() << "m/s\n" << std::flush;
         }
+
+        // Request display update
+        glutPostRedisplay();
+
+    }
+}
+
+
+
+/**
+* Initialize OpenGL Settings
+*/
+void initOpenGL()
+{
+    // Set clear color to sky blue
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // Enable depth testing for 3D rendering
+    glEnable(GL_DEPTH_TEST);
+
+    // Enable lighting for better visualization
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glEnable(GL_COLOR_MATERIAL);
+
+    // Set light position
+    GLfloat light_pos[] = { 50.0f, 50.0f, 100.0f, 1.0f };
+    GLfloat light_ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
+    GLfloat light_diffuse[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+
+    // Set light position
+    glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+
+    // Set shading model
+    glShadeModel(GL_SMOOTH);
+}
+
+/**
+ * Main function to run UAV simulation
+ * 
+ * @param argc argument count
+ * @param argv argument vector with argument values
+ */
+int main(int argc, char** argv)
+{
+    std::cout << "Starting UAV Halftime Show Simulation...\n";
+
+    // Init random seed
+    srand(static_cast<unsigned>(time(nullptr)));
+
+    // Init UAV Fleet at starting positions
+    initializeUAVFleet();
+
+    // Start UAV Threads
+    std::cout << "Starting UAV Threads...\n";
+    for (ECE_UAV *uav : uavFleet)
+    {
+        uav->startThread();
     }
 
-    // Stop UAV Threads
+    // Init OpenGL and GLUT
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowSize(400, 400);
+    glutInitWindowPosition(100, 100);
+    glutCreateWindow("UAV Halftime Show Sim");
+
+    initOpenGL();
+
+    // Register GLUT Callbacks
+    glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
+    glutIdleFunc(idle);
+
+    std::cout << "Starting OpenGL Rendering Loop...\n";
+
+    // Start GLUT Main Loop (this will block until window is closed)
+    glutMainLoop();
+    
+    // Stop UAV Threads (Cleanup)
     std::cout << "Stopping UAV Threads...\n";
     for (auto *uav : uavFleet)
     {
         uav->stopThread();
         uav->joinThread();
 
-        delete uav; // Clean up UAV objects
+        delete uav;
     }
 
     std::cout << "UAV Halftime Show Simulation Ended.\n";
