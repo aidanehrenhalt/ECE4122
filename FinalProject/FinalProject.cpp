@@ -141,6 +141,10 @@ public:
 class ECE_UAV;
 void threadFunction(ECE_UAV *pUav);
 
+
+// Forward Declaration of Global Variables
+extern std::atomic<double> globalSimTime;
+
 // ECE_UAV class with improve physics and control
 class ECE_UAV
 {
@@ -753,7 +757,53 @@ int main(int argc, char** argv)
         {
             last_print_time = globalSimTime.load();
 
-            ////
+            // Count UAVs during each phase
+            int ground_idle_count = 0;
+            int climbing_count = 0;
+            int on_sphere_count = 0;
+
+            double min_sphere_time = 999999;
+
+            for (ECE_UAV *uav : uavFleet)
+            {
+                auto phase = uav->getFlightPhase();
+
+                if (phase == 0)
+                {
+                    ground_idle_count++;
+                }
+                else if (phase == 1)
+                {
+                    climbing_count++;
+                }
+                else if (phase == 2)
+                {
+                    on_sphere_count++;
+                    double sphere_time = uav->getTimeOnSphere();
+                    if (sphere_time < min_sphere_time)
+                    {
+                        min_sphere_time = sphere_time;
+                    }
+                }
+            }
+
+            // Print UAV Phase Counts
+            std::cout << "\n---Sim Time: " << std::fixed << std::setprecision(1) << globalSimTime.load() << "s ---\n";
+            std::cout << " Ground: " << ground_idle_count << " UAVs"
+                      << " | " << " Climbing: " << climbing_count << " UAVs"
+                      << " | " << " On Sphere: " << on_sphere_count << " UAVs\n";
+
+            if (on_sphere_count > 0)
+            {
+                std::cout << " Min sphere time: " << std::setprecision(2) << min_sphere_time << " s / 60.0s \n";
+            }
+
+            // DEBUGGING: Print UAV[0] details
+            Vec3 pos = uavFleet[0]->getPos();
+            Vec3 velocity = uavFleet[0]->getVelocity();
+                
+            std::cout << " UAV[0] Pos: (" << std::setprecision(2) << pos.x << ", " << pos.y << ", " << pos.z << ")"
+                      << " | Velocity Magnitude: " << velocity.magnitude() << "m/s\n" << std::flush;
         }
     }
 
